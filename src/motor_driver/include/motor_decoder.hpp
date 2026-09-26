@@ -28,24 +28,14 @@ public:
     virtual const MotorParams& get_params() const = 0;
 };
 
-// EC-A8112-P1-18 电机解码器 - 支持问答模式返回报文类型 1
-class ECA8112Decoder : public MotorDecoder
+// EC 系列电机解码器基类 - 实现通用的问答模式 Type 1 协议
+class ECSeriesDecoder : public MotorDecoder
 {
 public:
-    ECA8112Decoder()
-    {
-        // EC-A8112-P1-18 电机参数
-        params_.p_min = -12.5f;    params_.p_max = 12.5f;
-        params_.v_min = -18.0f;    params_.v_max = 18.0f;
-        params_.kp_min = 0.0f;     params_.kp_max = 500.0f;
-        params_.kd_min = 0.0f;     params_.kd_max = 5.0f;
-        params_.t_min = -90.0f;    params_.t_max = 90.0f;
-        params_.i_min = -30.0f;    params_.i_max = 30.0f;
-    }
-    ~ECA8112Decoder() override = default;
+    ~ECSeriesDecoder() override = default;
 
-    // 解码 EC-A8112-P1-18 电机状态
-    // 数据格式 (问答模式返回报文类型 1):
+    // 解码电机状态 - 问答模式返回报文类型 1
+    // 数据格式:
     // Byte 0: [7:5] 帧类型 (0x01), [4:0] 保留
     // Byte 1-2: 位置 (16 bit)
     // Byte 3-4: 速度 (12 bit, 高 8 位在 Byte 3, 低 4 位在 Byte 4 高半字节)
@@ -73,8 +63,8 @@ public:
         return true;
     }
 
-    // 编码 EC-A8112-P1-18 电机指令
-    // 数据格式 (问答模式指令):
+    // 编码电机指令 - 问答模式指令
+    // 数据格式:
     // Byte 0: [7:5] 模式 (0x00), [4:0] Kp 高 5 位
     // Byte 1: [7:1] Kp 低 7 位, [0] Kd 最高位
     // Byte 2: Kd 低 8 位
@@ -107,16 +97,11 @@ public:
         return true;
     }
 
-    // 检查是否为 EC-A8112-P1-18 电机的有效响应帧 (帧类型 = 0x01)
+    // 检查是否为有效响应帧 (帧类型 = 0x01)
     bool is_valid_response(const uint8_t data[8]) const override
     {
         uint8_t frame_type = data[0] >> 5;
         return (frame_type == 0x01);
-    }
-
-    std::string get_model_name() const override
-    {
-        return "EC-A8112-P1-18";
     }
 
     const MotorParams& get_params() const override
@@ -124,8 +109,71 @@ public:
         return params_;
     }
 
-private:
+protected:
     MotorParams params_;
+};
+
+// EC-A8112-P1-18 电机解码器
+class ECA8112Decoder : public ECSeriesDecoder
+{
+public:
+    ECA8112Decoder()
+    {
+        // EC-A8112-P1-18 电机参数
+        params_.p_min = -12.5f;    params_.p_max = 12.5f;
+        params_.v_min = -18.0f;    params_.v_max = 18.0f;
+        params_.kp_min = 0.0f;     params_.kp_max = 500.0f;
+        params_.kd_min = 0.0f;     params_.kd_max = 5.0f;
+        params_.t_min = -90.0f;    params_.t_max = 90.0f;
+        params_.i_min = -30.0f;    params_.i_max = 30.0f;
+    }
+
+    std::string get_model_name() const override
+    {
+        return "EC-A8112-P1-18";
+    }
+};
+
+// EC-A10020-P1-12 电机解码器
+class ECA10020Decoder : public ECSeriesDecoder
+{
+public:
+    ECA10020Decoder()
+    {
+        // EC-A10020-P1-12 电机参数
+        params_.p_min = -12.5f;    params_.p_max = 12.5f;
+        params_.v_min = -18.0f;    params_.v_max = 18.0f;
+        params_.kp_min = 0.0f;     params_.kp_max = 500.0f;
+        params_.kd_min = 0.0f;     params_.kd_max = 5.0f;
+        params_.t_min = -150.0f;   params_.t_max = 150.0f;
+        params_.i_min = -70.0f;    params_.i_max = 70.0f;
+    }
+
+    std::string get_model_name() const override
+    {
+        return "EC-A10020-P1-12";
+    }
+};
+
+// EC-A4310-P2-36 电机解码器
+class ECA4310Decoder : public ECSeriesDecoder
+{
+public:
+    ECA4310Decoder()
+    {
+        // EC-A4310-P2-36 电机参数
+        params_.p_min = -12.5f;    params_.p_max = 12.5f;
+        params_.v_min = -18.0f;    params_.v_max = 18.0f;
+        params_.kp_min = 0.0f;     params_.kp_max = 500.0f;
+        params_.kd_min = 0.0f;     params_.kd_max = 5.0f;
+        params_.t_min = -30.0f;    params_.t_max = 30.0f;
+        params_.i_min = -30.0f;    params_.i_max = 30.0f;
+    }
+
+    std::string get_model_name() const override
+    {
+        return "EC-A4310-P2-36";
+    }
 };
 
 // 解码器工厂 - 根据电机型号创建对应的解码器实例
@@ -136,6 +184,12 @@ public:
     {
         if (model_name == "EC-A8112-P1-18" || model_name == "default") {
             return std::make_unique<ECA8112Decoder>();
+        }
+        else if (model_name == "EC-A10020-P1-12") {
+            return std::make_unique<ECA10020Decoder>();
+        }
+        else if (model_name == "EC-A4310-P2-36") {
+            return std::make_unique<ECA4310Decoder>();
         }
         return nullptr;
     }

@@ -35,6 +35,30 @@ struct MotorParams
     float i_min, i_max;       // 电流范围 (A)
 };
 
+// 单个电机配置结构体
+struct MotorConfig
+{
+    std::string module_name;         // USB2CAN 模块名称
+    int channel;                     // CAN 通道号
+    int can_id;                      // CAN ID
+    std::string motor_name;          // 电机型号名称
+    int axis;                        // 轴向 (1 或 -1)
+    float offset;                    // 位置偏移量 (rad)
+    std::array<float, 2> pos_limit;  // 位置限制 [min, max] (rad)
+};
+
+// 控制配置结构体
+struct ControlConfig
+{
+    int control_frequency;                // 控制频率 (Hz)
+    std::string command_topic;            // 指令话题名称
+    std::string state_topic;              // 状态话题名称
+    std::vector<std::string> joints;      // 关节名称列表
+    std::vector<int> joint_mapping;       // 关节映射索引
+    int frequency_info;                   // 频率信息标志
+    int joints_state_info;                // 关节状态信息标志
+};
+
 // CAN 设备管理结构体 - 使用设备名称映射到文件描述符
 struct CanDevice
 {

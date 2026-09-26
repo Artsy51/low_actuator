@@ -1,0 +1,24 @@
+{
+    "control_frequency": 250,
+    "command_topic": "/joints_command",
+    "state_topic": "/joints_state",
+
+    "joints":[
+        "Left_hip_pitch",
+        "Left_hip_roll",
+        "Left_hip_yaw",
+        "Left_knee",
+        "Left_calf_left",
+        "Left_calf_right",
+        "Right_hip_pitch",
+        "Right_hip_roll",
+        "Right_hip_yaw",
+        "Right_knee",
+        "Right_calf_left",
+        "Right_calf_right"
+    ],
+    "joint_mapping": [ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11 ],
+
+    "frequency_info":0,
+    "joints_state_info":0
+}

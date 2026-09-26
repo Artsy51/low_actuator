@@ -28,6 +28,9 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/JointsCmd.msg"
   "msg/JointDataValue.msg"
   "msg/JointCmdValue.msg"
+  "srv/DisableMotor.srv"
+  "srv/EnableMotor.srv"
+  "srv/ResetMotor.srv"
   DEPENDENCIES builtin_interfaces
 )
 
