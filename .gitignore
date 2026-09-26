@@ -1,0 +1,2 @@
+# Ignore actuator subproject (nested git repository)
+src/actuator/
