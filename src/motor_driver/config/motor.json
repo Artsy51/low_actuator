@@ -1,143 +1,143 @@
 {
     "Left_hip_pitch": {
-        "moddule_name": "USB2CAN0",
+        "module_name": "USB2CAN0",
         "channel": 1,
         "can_id": 1,
         "motor_name": "EC-A10020-P1-12",
         "axis": 1,
-        "off_set": 0.0,
+        "offset": 0.0,
         "pos_limit": [
             -3.14,
             3.14
         ]
     },
     "Left_hip_roll": {
-        "moddule_name": "USB2CAN0",
+        "module_name": "USB2CAN0",
         "channel": 1,
         "can_id": 2,
         "motor_name": "EC-A10020-P1-12",
         "axis": 1,
-        "off_set": 0.0,
+        "offset": 0.0,
         "pos_limit": [
             -3.14,
             3.14
         ]
     },
     "Left_hip_yaw": {
-        "moddule_name": "USB2CAN0",
+        "module_name": "USB2CAN0",
         "channel": 1,
         "can_id": 3,
         "motor_name": "EC-A8112-P1-18",
         "axis": -1,
-        "off_set": 0.0,
+        "offset": 0.0,
         "pos_limit": [
             -3.14,
             3.14
         ]
     },
     "Left_knee": {
-        "moddule_name": "USB2CAN0",
+        "module_name": "USB2CAN0",
         "channel": 2,
         "can_id": 1,
         "motor_name": "EC-A8112-P1-18",
         "axis": 1,
-        "off_set": 0.0,
+        "offset": 0.0,
         "pos_limit": [
             -3.14,
             3.14
         ]
     },
     "Left_calf_left": {
-        "moddule_name": "USB2CAN0",
+        "module_name": "USB2CAN0",
         "channel": 2,
         "can_id": 2,
         "motor_name": "EC-A4310-P2-36",
         "axis": 1,
-        "off_set": 0.0,
+        "offset": 0.0,
         "pos_limit": [
             -3.14,
             3.14
         ]
     },
     "Left_calf_right": {
-        "moddule_name": "USB2CAN0",
+        "module_name": "USB2CAN0",
         "channel": 2,
         "can_id": 3,
         "motor_name": "EC-A4310-P2-36",
         "axis": -1,
-        "off_set": 0.0,
+        "offset": 0.0,
         "pos_limit": [
             -3.14,
             3.14
         ]
     },
     "Right_hip_pitch": {
-        "moddule_name": "USB2CAN1",
+        "module_name": "USB2CAN1",
         "channel": 1,
         "can_id": 1,
         "motor_name": "EC-A10020-P1-12",
         "axis": -1,
-        "off_set": 0.0,
+        "offset": 0.0,
         "pos_limit": [
             -3.14,
             3.14
         ]
     },
     "Right_hip_roll": {
-        "moddule_name": "USB2CAN1",
+        "module_name": "USB2CAN1",
         "channel": 1,
         "can_id": 2,
         "motor_name": "EC-A10020-P1-12",
         "axis": 1,
-        "off_set": 0.0,
+        "offset": 0.0,
         "pos_limit": [
             -3.14,
             3.14
         ]
     },
     "Right_hip_yaw": {
-        "moddule_name": "USB2CAN1",
+        "module_name": "USB2CAN1",
         "channel": 1,
         "can_id": 3,
         "motor_name": "EC-A8112-P1-18",
         "axis": -1,
-        "off_set": 0.0,
+        "offset": 0.0,
         "pos_limit": [
             -3.14,
             3.14
         ]
     },
     "Right_knee": {
-        "moddule_name": "USB2CAN1",
+        "module_name": "USB2CAN1",
         "channel": 2,
         "can_id": 1,
         "motor_name": "EC-A8112-P1-18",
         "axis": -1,
-        "off_set": 0.0,
+        "offset": 0.0,
         "pos_limit": [
             -3.14,
             3.14
         ]
     },
     "Right_calf_left": {
-        "moddule_name": "USB2CAN1",
+        "module_name": "USB2CAN1",
         "channel": 2,
         "can_id": 2,
         "motor_name": "EC-A4310-P2-36",
         "axis": 1,
-        "off_set": 0.0,
+        "offset": 0.0,
         "pos_limit": [
             -3.14,
             3.14
         ]
     },
     "Right_calf_right": {
-        "moddule_name": "USB2CAN1",
+        "module_name": "USB2CAN1",
         "channel": 2,
         "can_id": 3,
         "motor_name": "EC-A4310-P2-36",
         "axis": -1,
-        "off_set": 0.0,
+        "offset": 0.0,
         "pos_limit": [
             -3.14,
             3.14

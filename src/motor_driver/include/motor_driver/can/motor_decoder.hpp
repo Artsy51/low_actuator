@@ -3,8 +3,8 @@
 #include <cstdint>
 #include <string>
 #include <memory>
-#include "common.hpp"
-#include "utils.hpp"
+#include "motor_driver/core/common.hpp"
+#include "motor_driver/core/utils.hpp"
 
 // 电机解码器基类 - 定义统一的解码/编码接口
 class MotorDecoder
@@ -180,6 +180,12 @@ public:
 class MotorDecoderFactory
 {
 public:
+    static bool is_supported(const std::string &model_name)
+    {
+        return model_name == "EC-A8112-P1-18" || model_name == "default" ||
+               model_name == "EC-A10020-P1-12" || model_name == "EC-A4310-P2-36";
+    }
+
     static std::unique_ptr<MotorDecoder> create(const std::string &model_name)
     {
         if (model_name == "EC-A8112-P1-18" || model_name == "default") {
