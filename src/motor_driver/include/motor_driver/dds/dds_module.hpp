@@ -3,8 +3,10 @@
 #include <algorithm>
 #include <atomic>
 #include <chrono>
+#include <iomanip>
 #include <memory>
 #include <mutex>
+#include <sstream>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -113,6 +115,7 @@ public:
                 if (it != states_.end())
                 {
                     it->second = state;
+                    ++update_counts_[joint];
                 }
             }
             message.data.reserve(config_.joints.size());
@@ -128,9 +131,69 @@ public:
             }
         }
         state_publisher_->publish(message);
+        output_diagnostics_if_needed();
     }
 
 private:
+    void output_diagnostics_if_needed()
+    {
+        const auto now = std::chrono::steady_clock::now();
+        std::unordered_map<std::string, std::size_t> counts;
+        std::unordered_map<std::string, MotorState> states;
+        double elapsed_seconds = 0.0;
+        {
+            std::lock_guard<std::mutex> lock(data_mutex_);
+            const auto elapsed = now - diagnostics_last_output_;
+            if (elapsed < std::chrono::seconds(1) ||
+                (config_.frequency_info == 0 && config_.joints_state_info == 0))
+            {
+                return;
+            }
+            elapsed_seconds = std::chrono::duration<double>(elapsed).count();
+            counts = update_counts_;
+            states = states_;
+            update_counts_.clear();
+            diagnostics_last_output_ = now;
+        }
+
+        if (config_.frequency_info != 0)
+        {
+            std::ostringstream output;
+            output << "\n===== Joint Update Frequency (Hz) =====\n";
+            output << std::fixed << std::setprecision(1);
+            for (const auto &joint : config_.joints)
+            {
+                output << "  " << joint << ": "
+                       << static_cast<double>(counts[joint]) / elapsed_seconds << " Hz\n";
+            }
+            output << "=======================================\n";
+            RCLCPP_INFO(node_->get_logger(), "%s", output.str().c_str());
+        }
+
+        if (config_.joints_state_info != 0)
+        {
+            std::ostringstream output;
+            output << "\n===== Joint State =====\n";
+            output << std::left << std::setw(24) << "Joint"
+                   << std::right << std::setw(10) << "Position"
+                   << std::setw(10) << "Velocity"
+                   << std::setw(10) << "Current"
+                   << std::setw(10) << "Temp" << "\n";
+            output << std::fixed << std::setprecision(3);
+            for (const auto &joint : config_.joints)
+            {
+                const auto &state = states.at(joint);
+                output << std::left << std::setw(24) << joint
+                       << std::right << std::setw(10) << state.position
+                       << std::setw(10) << state.velocity
+                       << std::setw(10) << state.electric
+                       << std::setw(10) << state.temperature << "\n";
+            }
+            output << "=======================\n";
+            RCLCPP_INFO(node_->get_logger(), "%s", output.str().c_str());
+        }
+    }
+
     ControlConfig config_;
     rclcpp::Node::SharedPtr node_;
     rclcpp::Subscription<motor_msgs::msg::JointsCmd>::SharedPtr command_subscription_;
@@ -142,9 +205,11 @@ private:
     mutable std::mutex data_mutex_;
     std::unordered_map<std::string, MotorCmd> commands_;
     std::unordered_map<std::string, MotorState> states_;
+    std::unordered_map<std::string, std::size_t> update_counts_;
     std::uint64_t command_sequence_ = 0;
     bool has_received_command_ = false;
     std::chrono::steady_clock::time_point last_command_time_{};
+    std::chrono::steady_clock::time_point diagnostics_last_output_{std::chrono::steady_clock::now()};
     std::atomic<bool> reset_requested_{false};
     std::atomic<bool> enable_requested_{false};
     std::atomic<bool> disable_requested_{false};
