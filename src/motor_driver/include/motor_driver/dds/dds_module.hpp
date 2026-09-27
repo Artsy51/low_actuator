@@ -144,7 +144,8 @@ private:
         {
             std::lock_guard<std::mutex> lock(data_mutex_);
             const auto elapsed = now - diagnostics_last_output_;
-            if (elapsed < std::chrono::seconds(1) ||
+            // Diagnostics use a fixed three-second measurement and output window.
+            if (elapsed < std::chrono::seconds(3) ||
                 (config_.frequency_info == 0 && config_.joints_state_info == 0))
             {
                 return;
