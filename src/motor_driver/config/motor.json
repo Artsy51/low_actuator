@@ -40,7 +40,7 @@
         "channel": 2,
         "can_id": 1,
         "motor_name": "EC-A8112-P1-18",
-        "axis": 1,
+        "axis": -1,
         "offset": 0.0,
         "pos_limit": [
             -3.14,
@@ -50,7 +50,7 @@
     "Left_calf_left": {
         "module_name": "USB2CAN0",
         "channel": 2,
-        "can_id": 2,
+        "can_id": 3,
         "motor_name": "EC-A4310-P2-36",
         "axis": 1,
         "offset": 0.0,
@@ -62,7 +62,7 @@
     "Left_calf_right": {
         "module_name": "USB2CAN0",
         "channel": 2,
-        "can_id": 3,
+        "can_id": 2,
         "motor_name": "EC-A4310-P2-36",
         "axis": -1,
         "offset": 0.0,
@@ -112,7 +112,7 @@
         "channel": 2,
         "can_id": 1,
         "motor_name": "EC-A8112-P1-18",
-        "axis": -1,
+        "axis": 1,
         "offset": 0.0,
         "pos_limit": [
             -3.14,
