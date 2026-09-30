@@ -103,10 +103,9 @@ public:
             disable_requested_.exchange(false)};
     }
 
-    void publish_states(const std::unordered_map<std::string, MotorState> &updates)
+    // Apply only newly received CAN states and count those actual updates.
+    void update_states(const std::unordered_map<std::string, MotorState> &updates)
     {
-        motor_msgs::msg::JointsData message;
-        message.stamp = node_->now();
         {
             std::lock_guard<std::mutex> lock(data_mutex_);
             for (const auto &[joint, state] : updates)
@@ -114,10 +113,28 @@ public:
                 const auto it = states_.find(joint);
                 if (it != states_.end())
                 {
-                    it->second = state;
-                    ++update_counts_[joint];
+                    const bool changed = !state_valid_[joint] ||
+                        it->second.position != state.position ||
+                        it->second.velocity != state.velocity ||
+                        it->second.electric != state.electric ||
+                        it->second.temperature != state.temperature;
+                    if (changed)
+                    {
+                        it->second = state;
+                        state_valid_[joint] = true;
+                        ++update_counts_[joint];
+                    }
                 }
             }
+        }
+    }
+
+    void publish_states()
+    {
+        motor_msgs::msg::JointsData message;
+        message.stamp = node_->now();
+        {
+            std::lock_guard<std::mutex> lock(data_mutex_);
             message.data.reserve(config_.joints.size());
             for (const auto &joint : config_.joints)
             {
@@ -206,6 +223,7 @@ private:
     mutable std::mutex data_mutex_;
     std::unordered_map<std::string, MotorCmd> commands_;
     std::unordered_map<std::string, MotorState> states_;
+    std::unordered_map<std::string, bool> state_valid_;
     std::unordered_map<std::string, std::size_t> update_counts_;
     std::uint64_t command_sequence_ = 0;
     bool has_received_command_ = false;

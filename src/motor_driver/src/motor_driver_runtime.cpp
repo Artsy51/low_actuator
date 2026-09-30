@@ -121,7 +121,8 @@ void MotorDriverRuntime::run()
             safety_triggered = cycle_safety_triggered_;
             auto states = cycle_states_;
             lock.unlock();
-            dds_.publish_states(states);
+            dds_.update_states(states);
+            dds_.publish_states();
         }
 
         if (state != reported_state)
