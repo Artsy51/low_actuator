@@ -97,6 +97,25 @@ void MotorDriverRuntime::run()
         const auto events = dds_.consume_events();
         const DriverState state = state_machine_.update(snapshot, events, safety_triggered);
 
+        if (state != reported_state)
+        {
+            RCLCPP_WARN(dds_.node()->get_logger(), "Driver state: %s -> %s",
+                        DriverStateMachine::name(reported_state),
+                        DriverStateMachine::name(state));
+            reported_state = state;
+        }
+
+        if (state == DriverState::DISABLED)
+        {
+            next_cycle += period;
+            std::this_thread::sleep_until(next_cycle);
+            if (std::chrono::steady_clock::now() - next_cycle > period)
+            {
+                next_cycle = std::chrono::steady_clock::now();
+            }
+            continue;
+        }
+
         {
             std::lock_guard<std::mutex> lock(work_mutex_);
             cycle_state_ = state;
@@ -123,14 +142,6 @@ void MotorDriverRuntime::run()
             lock.unlock();
             dds_.update_states(states);
             dds_.publish_states();
-        }
-
-        if (state != reported_state)
-        {
-            RCLCPP_WARN(dds_.node()->get_logger(), "Driver state: %s -> %s",
-                        DriverStateMachine::name(reported_state),
-                        DriverStateMachine::name(state));
-            reported_state = state;
         }
 
         next_cycle += period;

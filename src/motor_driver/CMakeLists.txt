@@ -41,6 +41,7 @@ set_target_properties(motor_driver_node PROPERTIES INSTALL_RPATH "$ORIGIN/..")
 
 install(DIRECTORY include/ DESTINATION include)
 install(DIRECTORY config/ DESTINATION share/${PROJECT_NAME}/config)
+install(PROGRAMS scripts/motor_driver_service.sh DESTINATION lib/${PROJECT_NAME})
 install(FILES library/can/usb_can.h DESTINATION include/${PROJECT_NAME}/can)
 install(FILES library/json/json.hpp DESTINATION include)
 install(FILES "${USB_CAN_LIBRARY}" DESTINATION lib)
