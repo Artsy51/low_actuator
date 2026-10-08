@@ -2,6 +2,8 @@
     "control_frequency": 250,
     "command_topic": "/joints_command",
     "state_topic": "/joints_state",
+    "ankle_command_topic": "/ankle_joints_command",
+    "ankle_state_topic": "/ankle_joints_state",
 
     "joints":[
         "Left_hip_pitch",

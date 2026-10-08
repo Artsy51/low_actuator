@@ -14,6 +14,25 @@ enum class DriverState
     DISABLED
 };
 
+// 两条指令话题互斥。IDLE 下先到达的话题占有控制权，直到 reset。
+enum class CommandSource
+{
+    None,
+    Direct,
+    Ankle
+};
+
+inline const char *command_source_name(CommandSource source)
+{
+    switch (source)
+    {
+    case CommandSource::None: return "NONE";
+    case CommandSource::Direct: return "DIRECT";
+    case CommandSource::Ankle: return "ANKLE";
+    }
+    return "UNKNOWN";
+}
+
 struct DriverEvents
 {
     bool reset = false;
@@ -26,6 +45,7 @@ struct CommandSnapshot
     std::unordered_map<std::string, MotorCmd> commands;
     std::uint64_t sequence = 0;
     bool timed_out = true;
+    CommandSource source = CommandSource::None;
 };
 
 class DriverStateMachine

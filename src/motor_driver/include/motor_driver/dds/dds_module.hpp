@@ -35,27 +35,31 @@ public:
             config_.command_topic, rclcpp::SensorDataQoS(),
             [this](motor_msgs::msg::JointsCmd::ConstSharedPtr message)
             {
-                std::lock_guard<std::mutex> lock(data_mutex_);
-                const size_t count = std::min(config_.joints.size(), message->data.size());
-                for (size_t i = 0; i < count; ++i)
-                {
-                    const auto &value = message->data[i];
-                    commands_[config_.joints[i]] = MotorCmd{
-                        value.position, value.velocity, value.torque, value.kp, value.kd};
-                }
-                ++command_sequence_;
-                last_command_time_ = std::chrono::steady_clock::now();
-                has_received_command_ = true;
+                accept_command(CommandSource::Direct, *message);
+            });
+        ankle_command_subscription_ = node_->create_subscription<motor_msgs::msg::JointsCmd>(
+            config_.ankle_command_topic, rclcpp::SensorDataQoS(),
+            [this](motor_msgs::msg::JointsCmd::ConstSharedPtr message)
+            {
+                accept_command(CommandSource::Ankle, *message);
             });
 
         state_publisher_ = node_->create_publisher<motor_msgs::msg::JointsData>(
             config_.state_topic, 10);
+        ankle_state_publisher_ = node_->create_publisher<motor_msgs::msg::JointsData>(
+            config_.ankle_state_topic, 10);
 
         reset_service_ = node_->create_service<motor_msgs::srv::ResetMotor>(
             "/motor_driver/reset",
             [this](const std::shared_ptr<motor_msgs::srv::ResetMotor::Request>,
                    std::shared_ptr<motor_msgs::srv::ResetMotor::Response> response)
             {
+                {
+                    std::lock_guard<std::mutex> lock(data_mutex_);
+                    command_source_ = CommandSource::None;
+                    driver_state_ = DriverState::IDLE;
+                    foreign_command_reported_ = false;
+                }
                 reset_requested_.store(true);
                 response->success = true;
                 response->message = "Driver reset to idle; waiting for a new command";
@@ -92,7 +96,19 @@ public:
         std::lock_guard<std::mutex> lock(data_mutex_);
         const bool timed_out = !has_received_command_ ||
             std::chrono::steady_clock::now() - last_command_time_ > timeout;
-        return CommandSnapshot{commands_, command_sequence_, timed_out};
+        return CommandSnapshot{commands_, command_sequence_, timed_out, command_source_};
+    }
+
+    void set_driver_state(DriverState state)
+    {
+        std::lock_guard<std::mutex> lock(data_mutex_);
+        driver_state_ = state;
+    }
+
+    std::unordered_map<std::string, MotorState> state_snapshot() const
+    {
+        std::lock_guard<std::mutex> lock(data_mutex_);
+        return states_;
     }
 
     DriverEvents consume_events()
@@ -132,26 +148,77 @@ public:
     void publish_states()
     {
         motor_msgs::msg::JointsData message;
-        message.stamp = node_->now();
         {
             std::lock_guard<std::mutex> lock(data_mutex_);
-            message.data.reserve(config_.joints.size());
-            for (const auto &joint : config_.joints)
-            {
-                const auto &state = states_.at(joint);
-                motor_msgs::msg::JointDataValue value;
-                value.position = state.position;
-                value.velocity = state.velocity;
-                value.electric = state.electric;
-                value.temperature = state.temperature;
-                message.data.push_back(value);
-            }
+            message = make_state_message(states_);
         }
         state_publisher_->publish(message);
         output_diagnostics_if_needed();
     }
 
+    void publish_ankle_states(const std::unordered_map<std::string, MotorState> &states)
+    {
+        ankle_state_publisher_->publish(make_state_message(states));
+    }
+
 private:
+    void accept_command(CommandSource source, const motor_msgs::msg::JointsCmd &message)
+    {
+        std::lock_guard<std::mutex> lock(data_mutex_);
+        if (command_source_ == CommandSource::None)
+        {
+            if (driver_state_ != DriverState::IDLE)
+            {
+                return;
+            }
+            command_source_ = source;
+            RCLCPP_WARN(node_->get_logger(), "Command source locked to %s",
+                        command_source_name(source));
+        }
+        else if (command_source_ != source)
+        {
+            if (!foreign_command_reported_)
+            {
+                foreign_command_reported_ = true;
+                RCLCPP_WARN(node_->get_logger(),
+                            "Ignoring %s commands while %s is active",
+                            command_source_name(source),
+                            command_source_name(command_source_));
+            }
+            return;
+        }
+
+        const size_t count = std::min(config_.joints.size(), message.data.size());
+        for (size_t i = 0; i < count; ++i)
+        {
+            const auto &value = message.data[i];
+            commands_[config_.joints[i]] = MotorCmd{
+                value.position, value.velocity, value.torque, value.kp, value.kd};
+        }
+        ++command_sequence_;
+        last_command_time_ = std::chrono::steady_clock::now();
+        has_received_command_ = true;
+    }
+
+    motor_msgs::msg::JointsData make_state_message(
+        const std::unordered_map<std::string, MotorState> &states) const
+    {
+        motor_msgs::msg::JointsData message;
+        message.stamp = node_->now();
+        message.data.reserve(config_.joints.size());
+        for (const auto &joint : config_.joints)
+        {
+            const auto &state = states.at(joint);
+            motor_msgs::msg::JointDataValue value;
+            value.position = state.position;
+            value.velocity = state.velocity;
+            value.electric = state.electric;
+            value.temperature = state.temperature;
+            message.data.push_back(value);
+        }
+        return message;
+    }
+
     void output_diagnostics_if_needed()
     {
         const auto now = std::chrono::steady_clock::now();
@@ -215,7 +282,9 @@ private:
     ControlConfig config_;
     rclcpp::Node::SharedPtr node_;
     rclcpp::Subscription<motor_msgs::msg::JointsCmd>::SharedPtr command_subscription_;
+    rclcpp::Subscription<motor_msgs::msg::JointsCmd>::SharedPtr ankle_command_subscription_;
     rclcpp::Publisher<motor_msgs::msg::JointsData>::SharedPtr state_publisher_;
+    rclcpp::Publisher<motor_msgs::msg::JointsData>::SharedPtr ankle_state_publisher_;
     rclcpp::Service<motor_msgs::srv::ResetMotor>::SharedPtr reset_service_;
     rclcpp::Service<motor_msgs::srv::EnableMotor>::SharedPtr enable_service_;
     rclcpp::Service<motor_msgs::srv::DisableMotor>::SharedPtr disable_service_;
@@ -227,6 +296,9 @@ private:
     std::unordered_map<std::string, std::size_t> update_counts_;
     std::uint64_t command_sequence_ = 0;
     bool has_received_command_ = false;
+    CommandSource command_source_ = CommandSource::None;
+    DriverState driver_state_ = DriverState::IDLE;
+    bool foreign_command_reported_ = false;
     std::chrono::steady_clock::time_point last_command_time_{};
     std::chrono::steady_clock::time_point diagnostics_last_output_{std::chrono::steady_clock::now()};
     std::atomic<bool> reset_requested_{false};

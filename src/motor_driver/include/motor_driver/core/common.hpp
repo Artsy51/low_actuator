@@ -51,8 +51,10 @@ struct MotorConfig
 struct ControlConfig
 {
     int control_frequency;                // 控制频率 (Hz)
-    std::string command_topic;            // 指令话题名称
-    std::string state_topic;              // 状态话题名称
+    std::string command_topic;            // 电机直发指令话题
+    std::string state_topic;              // 电机状态话题
+    std::string ankle_command_topic;      // 踝端指令话题
+    std::string ankle_state_topic;        // 踝端状态话题
     std::vector<std::string> joints;      // 关节名称列表
     std::vector<int> joint_mapping;       // 关节映射索引
     int frequency_info;                   // 频率信息标志

@@ -9,6 +9,7 @@
 #include <unordered_map>
 #include <vector>
 
+#include "motor_driver/ankle/ankle_transmission.hpp"
 #include "motor_driver/can/can_module.hpp"
 #include "motor_driver/dds/dds_module.hpp"
 #include "motor_driver/runtime/driver_state_machine.hpp"
@@ -34,11 +35,13 @@ private:
 
     void worker_loop(size_t worker_index);
     void build_worker_schedule(const ControlConfig &config);
+    void publish_feedback();
 
     CanModule &can_;
     DdsModule &dds_;
     ControlConfig config_;
     DriverStateMachine state_machine_;
+    AnkleTransmission ankle_;
     std::vector<ModuleWorker> workers_;
 
     std::mutex work_mutex_;

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <algorithm>
 #include <array>
 #include <fstream>
 #include <iostream>
@@ -148,15 +149,25 @@ public:
             parsed.control_frequency = json.value("control_frequency", 250);
             parsed.command_topic = json.value("command_topic", std::string("/joints_command"));
             parsed.state_topic = json.value("state_topic", std::string("/joints_state"));
+            parsed.ankle_command_topic =
+                json.value("ankle_command_topic", std::string("/ankle_joints_command"));
+            parsed.ankle_state_topic =
+                json.value("ankle_state_topic", std::string("/ankle_joints_state"));
             parsed.frequency_info = json.value("frequency_info", 0);
             parsed.joints_state_info = json.value("joints_state_info", 0);
             parsed.joints = json.at("joints").get<std::vector<std::string>>();
             parsed.joint_mapping = json.value("joint_mapping", std::vector<int>{});
 
-            if (parsed.control_frequency <= 0 || parsed.command_topic.empty() ||
-                parsed.state_topic.empty() || parsed.joints.empty())
+            const std::array<std::string, 4> topics{
+                parsed.command_topic, parsed.state_topic,
+                parsed.ankle_command_topic, parsed.ankle_state_topic};
+            if (parsed.control_frequency <= 0 || parsed.joints.empty() ||
+                std::any_of(topics.begin(), topics.end(),
+                            [](const std::string &topic) { return topic.empty(); }) ||
+                std::set<std::string>(topics.begin(), topics.end()).size() != topics.size())
             {
-                std::cerr << "Control frequency, topics and joints must be valid" << std::endl;
+                std::cerr << "Control frequency, topics and joints must be valid and distinct"
+                          << std::endl;
                 return false;
             }
             if (parsed.joint_mapping.empty())

@@ -2,6 +2,7 @@
 #include <thread>
 
 #include "ament_index_cpp/get_package_share_directory.hpp"
+#include "motor_driver/ankle/ankle_transmission.hpp"
 #include "motor_driver/dds/dds_module.hpp"
 #include "motor_driver/runtime/motor_driver_runtime.hpp"
 #include "motor_driver/config/param_parser.hpp"
@@ -26,6 +27,13 @@ int main(int argc, char **argv)
         }
 
         const auto &control = control_parser.get_config();
+        if (!AnkleTransmission::joints_available(control.joints))
+        {
+            RCLCPP_ERROR(rclcpp::get_logger("motor_driver"),
+                         "Control joints are missing an ankle motor pair");
+            rclcpp::shutdown();
+            return 1;
+        }
         for (const auto &joint : control.joints)
         {
             if (!motor_parser.has_joint(joint))

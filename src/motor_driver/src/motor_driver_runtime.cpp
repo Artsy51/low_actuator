@@ -105,8 +105,10 @@ void MotorDriverRuntime::run()
             reported_state = state;
         }
 
+        dds_.set_driver_state(state);
         if (state == DriverState::DISABLED)
         {
+            publish_feedback();
             next_cycle += period;
             std::this_thread::sleep_until(next_cycle);
             if (std::chrono::steady_clock::now() - next_cycle > period)
@@ -116,10 +118,18 @@ void MotorDriverRuntime::run()
             continue;
         }
 
+        auto cycle_commands = snapshot;
+        if (state == DriverState::NORMAL && snapshot.source == CommandSource::Ankle &&
+            !ankle_.apply_command(cycle_commands.commands))
+        {
+            RCLCPP_ERROR_THROTTLE(dds_.node()->get_logger(), *dds_.node()->get_clock(), 1000,
+                                  "Ankle inverse kinematics failed; holding the last motor command");
+        }
+
         {
             std::lock_guard<std::mutex> lock(work_mutex_);
             cycle_state_ = state;
-            cycle_commands_ = snapshot;
+            cycle_commands_ = std::move(cycle_commands);
             cycle_states_.clear();
             cycle_safety_triggered_ = false;
             completed_workers_ = 0;
@@ -141,7 +151,7 @@ void MotorDriverRuntime::run()
             auto states = cycle_states_;
             lock.unlock();
             dds_.update_states(states);
-            dds_.publish_states();
+            publish_feedback();
         }
 
         next_cycle += period;
@@ -152,6 +162,14 @@ void MotorDriverRuntime::run()
         }
     }
     stop();
+}
+
+void MotorDriverRuntime::publish_feedback()
+{
+    dds_.publish_states();
+    auto ankle_states = dds_.state_snapshot();
+    ankle_.apply_state(ankle_states);
+    dds_.publish_ankle_states(ankle_states);
 }
 
 void MotorDriverRuntime::stop()

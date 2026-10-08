@@ -13,6 +13,7 @@ endif()
 
 find_package(ament_cmake REQUIRED)
 find_package(ament_index_cpp REQUIRED)
+find_package(Eigen3 3.3 REQUIRED NO_MODULE)
 find_package(motor_msgs REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(Threads REQUIRED)
@@ -22,7 +23,9 @@ if(NOT EXISTS "${USB_CAN_LIBRARY}")
   message(FATAL_ERROR "USB-CAN library not found: ${USB_CAN_LIBRARY}")
 endif()
 
-add_library(motor_driver SHARED src/motor_driver_runtime.cpp)
+add_library(motor_driver SHARED
+  src/motor_driver_runtime.cpp
+  src/ankle_solver.cpp)
 target_include_directories(motor_driver PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/library>
@@ -31,7 +34,9 @@ target_include_directories(motor_driver PUBLIC
   $<INSTALL_INTERFACE:include>
 )
 ament_target_dependencies(motor_driver rclcpp motor_msgs)
-target_link_libraries(motor_driver "${USB_CAN_LIBRARY}" Threads::Threads)
+target_link_libraries(motor_driver "${USB_CAN_LIBRARY}" Threads::Threads Eigen3::Eigen)
+set_source_files_properties(src/ankle_solver.cpp PROPERTIES
+  COMPILE_OPTIONS "-Wno-unused-parameter")
 set_target_properties(motor_driver PROPERTIES INSTALL_RPATH "$ORIGIN")
 
 add_executable(motor_driver_node src/motor_driver_node.cpp)
